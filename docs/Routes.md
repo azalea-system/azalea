@@ -4,11 +4,9 @@ The following routes are custom extensions unique to this server instance. They 
 
 NOTE: This documentation was partially written by a large language model, but has of course been checked by a human.
 
----
+## Authentication & Configuration
 
-## ── Authentication & Configuration ──
-
-### 1. Web UI Authentication Configuration
+### Web UI Authentication Configuration
 * **Endpoint:** `/auth-config`
 * **Methods:** `GET`, `POST`
 * **Description:** Manages the server's global HTTP Basic authentication settings.
@@ -36,9 +34,7 @@ NOTE: This documentation was partially written by a large language model, but ha
 
 ---
 
-## ── Third-Party Integration (Discord) ──
-
-### 2. Discord OAuth Callback
+### Discord OAuth Callback
 * **Endpoint:** `/discord/callback`
 * **Methods:** `GET`, `OPTIONS`
 * **Description:** Handles the OAuth2 redirect flow from Discord. Exchanges the temporary authorization code for access and refresh tokens used to authenticate server-side Discord interactions (e.g., Rich Presence or activity sync).
@@ -48,7 +44,7 @@ NOTE: This documentation was partially written by a large language model, but ha
   * `error` *(string)*: Optional error string provided by Discord if authorization was denied.
 * **Response:** A `302 Redirect` back to the frontend origin provided in the `state` parameter with either a `discord=success` or `discord=error&message=...` query string.
 
-### 3. Get Discord Connection Status
+### Get Discord Connection Status
 * **Endpoint:** `/rest/getDiscordStatus`
 * **Methods:** `GET`
 * **Description:** Checks if the server currently possesses a saved Discord access token.
@@ -68,7 +64,7 @@ NOTE: This documentation was partially written by a large language model, but ha
   }
 
 
-### 4. Disconnect Discord Integration
+### Disconnect Discord Integration
 * **Endpoint:** `/rest/disconnectDiscord`
 * **Methods:** `POST`, `OPTIONS`
 * **Description:** Revokes and removes the saved Discord tokens from the server configuration.
@@ -88,9 +84,9 @@ NOTE: This documentation was partially written by a large language model, but ha
 
 ---
 
-## ── Server Management & Task Automation ──
+## Server Management & Task Automation
 
-### 5. Remote Server Download (Single Song)
+### Remote Server Download (Single Song)
 * **Endpoint:** `/rest/downloadOnServer`
 * **Methods:** `GET`
 * **Description:** Triggers or polls a server-side background task (yt-dlp or internal download system) to download a missing track or placeholder song directly into the local server library.
@@ -109,7 +105,7 @@ NOTE: This documentation was partially written by a large language model, but ha
   }
 
 
-### 6. Remote Server Download (Entire Album)
+### Remote Server Download (Entire Album)
 * **Endpoint:** `/rest/downloadAlbumOnServer`
 * **Methods:** `GET`
 * **Description:** Identifies all missing/placeholder songs associated with the provided album ID and spins up background tasks to download them sequentially.
@@ -130,7 +126,7 @@ NOTE: This documentation was partially written by a large language model, but ha
   }
 
 
-### 7. Download Event Updates (WebSocket)
+### Download Event Updates (WebSocket)
 * **Endpoint:** `/rest/downloadEvents`
 * **Methods:** `WEBSOCKET`
 * **Description:** Establishes a persistent full-duplex connection allowing the server to push real-time download status, speeds, and job progress down to web application frontends.
@@ -143,8 +139,8 @@ NOTE: This documentation was partially written by a large language model, but ha
 
 ---
 
-## ── Protocol Behaviors & Dynamic Fallbacks ──
+## Protocol Behaviors & Dynamic Fallbacks
 
-### 9. Dynamic On-Demand Streaming Fallback
+### Dynamic On-Demand Streaming Fallback
 * **Endpoint Extensions inside:** `/rest/stream`
 * **Description:** While /rest/stream is a mandatory Subsonic endpoint, your implementation features a custom fallback logic hook. If the track database matches an entry that has no active filesystem path (filepath), the route automatically invokes yt-dlp to query external streaming sites, extracts an active source URL, and responds with a 302 Redirect directly to the live audio stream instead of throwing a standard 404 Not Found error.
