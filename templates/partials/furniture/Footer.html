@@ -1,0 +1,11 @@
+<footer style="padding: 0.5rem">
+    <span
+        >{% if copyright_year_range %}&copy; Copyright {{ copyright_year_range
+        }}{% endif %} {%if author %}{% if author_link %}<a
+            href="{{ author_link }}"
+            >{{ author }}</a
+        >{% else %}{{ author }}{% endif %}{% endif %} | Licensed under the GPLv3
+        only.{%if github_link %} |
+        <a href="{{ github_link }}">Source Code{% endif %}</a></span
+    >
+</footer>

@@ -1,0 +1,10 @@
+{% if crumbs %}
+<nav class="crumbs">
+    <ol>
+        {% for crumb in crumbs[:-1] %}
+        <li class="crumb"><a href="{{ crumb.link }}">{{ crumb.name }}</a></li>
+        {% endfor %}
+        <li>{{ crumbs[-1].name }}</li>
+    </ol>
+</nav>
+{% endif %}

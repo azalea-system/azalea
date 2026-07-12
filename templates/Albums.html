@@ -1,0 +1,14 @@
+{% include 'partials/furniture/Head.html' %}
+<body>
+    {% include 'partials/furniture/Header.html' %}
+    <main>
+        <h1>
+            Albums in collection '<a href="/browse/{{ collection.id }}"
+                >{{ collection.name }}</a
+            >'
+        </h1>
+        <p>{{ albums|length }} albums</p>
+        {% include 'partials/AlbumList.html' %}
+    </main>
+    {% include 'partials/furniture/Footer.html' %}
+</body>

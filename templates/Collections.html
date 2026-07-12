@@ -1,0 +1,10 @@
+{% include 'partials/furniture/Head.html' %}
+<body>
+    {% include 'partials/furniture/Header.html' %}
+    <main>
+        <h1>Collections</h1>
+        {{ collections|length }} Collections {% include
+        'partials/CollectionTree.html' %}
+    </main>
+    {% include 'partials/furniture/Footer.html' %}
+</body>

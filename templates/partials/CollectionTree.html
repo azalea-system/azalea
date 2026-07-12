@@ -1,0 +1,21 @@
+<ul>
+    {% for cid in collections_including_disabled %}
+    {% set collection = collections_including_disabled[cid] %}
+    <li>
+        {% if collection.enabled %}
+        <a href="/browse/{{ cid }}">{{ collection.name }}</a>
+        {% else %} {{ collection.name }} {% endif %}
+        <span style="color: grey">({{ collection.type }})</span>
+        {% if not collection.enabled %}
+        <span style="color: red"> (disabled)</span>
+        {% endif %}
+        {% if collection.type == "music" and collection.enabled %}
+        <ul>
+            {% for entity in collection.nav_entities %}
+            <li><a href="/browse/{{ cid }}/{{ entity.plural }}">{{ entity.plural|capitalize }}</a></li>
+            {% endfor %}
+        </ul>
+        {% endif %}
+    </li>
+    {% endfor %}
+</ul>

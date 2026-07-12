@@ -1,0 +1,24 @@
+{% include 'partials/furniture/Head.html' %}
+<body>
+    {% include 'partials/furniture/Header.html' %}
+    <main>
+        <h1>{{ artist.name }}</h1>
+        <div style="display: flex; gap: 1.2rem; flex-wrap: wrap;">
+            {% if artist.songs %}
+            <section>
+                <h2>Songs ({{ artist.songs|length }})</h2>
+                {% set songs = artist.songs %}
+                {% include 'partials/SongList.html' %}
+            </section>
+            {% endif %}
+            {% if artist.albums %}
+            <section>
+                <h2>Albums ({{ artist.albums|length }})</h2>
+            {% set albums = artist.albums %}
+            {% include 'partials/AlbumList.html' %}
+            </section>
+            {% endif %}
+        </div>
+    </main>
+    {% include 'partials/furniture/Footer.html' %}
+</body>

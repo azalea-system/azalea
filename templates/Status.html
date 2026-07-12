@@ -1,0 +1,684 @@
+{% include 'partials/furniture/Head.html' %}
+<body>
+    {% include 'partials/furniture/Header.html' %}
+    <main style="display: flex; gap: 0.8rem;">
+        <section>
+            <div style="display: flex; gap: 0.6rem;">
+                <span
+                    style="
+                        display: flex;
+                        gap: 0.5rem;
+                        height: 2.6rem;
+                        align-items: center;
+                        margin-top: 1rem;
+                    "
+                >
+                    <span class="logo">{{ logo_svg|safe }}</span>
+                    <h1>{{ name }}</h1>
+                </span>
+                <small><i>"{{ tagline }}"</i></small>
+            </div>
+            <div style="display: flex; gap: 2rem">
+                <section style="max-width: 27rem">
+                    <section>
+                        <h2>About</h2>
+                        <p>
+                            {{ name }} version {{ version }}<br />
+                            Commit reference:
+                            <a
+                                href="{{ github_link }}/commit/{{ commit_reference }}"
+                                >{{ commit_reference[:7] }}</a
+                            ><br />
+                            Updated {{ commit_date_str }} {% if quart_debug %}<br /><br />QUART
+                            IS IN DEBUG MODE{% endif %}
+                        </p>
+                    </section>
+                    <section>
+                        <h2>How To Use</h2>
+                        <p>
+                            This interface is not for consuming your media, but for
+                            managing your library.
+                        </p>
+                        <p>
+                            It is designed to be as bare bones as possible to stay
+                            out of your way.
+                        </p>
+                        <p>
+                            To get started using your {{ name }} server, choose an
+                            client app below for your relevant use-case.
+                        </p>
+                        {% for category in apps %}
+                        <h3>Apps For {{ category }} Collections</h3>
+                        {% for platform in apps[category] %}
+                        <h4>{{ platform }}</h4>
+                        {% for app in apps[category][platform] %}
+                        <li>
+                            {{ app }} {% for link in
+                            apps[category][platform][app]['links'] %} {% if not
+                            loop.first %}|{% endif %}
+                            <a
+                                href="{{ apps[category][platform][app]['links'][link] }}"
+                                >{{ link }}</a
+                            >
+                            {% endfor %}
+                        </li>
+                        {% endfor %} {% endfor %} {% endfor %}
+                    </section>
+                </section>
+            </div>
+        </section>
+        <section>
+            <section>
+                <h2>Collections</h2>
+                {% include 'partials/CollectionTree.html' %}
+            </section>
+            <section>
+                <h2>Stats</h2>
+                <div id="statsContainer" style="margin-top: 0.5rem">
+                    <div id="statsContent"></div>
+                    <div
+                        id="lyricsStats"
+                        style="margin-top: 0.5rem; color: var(--muted)"
+                    ></div>
+                </div>
+            </section>
+            <section>
+                <h2>Actions</h2>
+                <div
+                    style="
+                        display: flex;
+                        flex-direction: column;
+                        gap: 0.3rem;
+                        margin-top: 0.5rem;
+                    "
+                >
+                    <button onclick="rescan(event)" id="rescanButton">
+                        Rescan Library
+                    </button>
+                    <button
+                        onclick="fetchMetadata(event)"
+                        id="fetchMetadataButton"
+                    >
+                        Fetch Metadata
+                    </button>
+                    <button
+                        onclick="resetMetadata(event)"
+                        id="resetMetadataButton"
+                    >
+                        Reset Metadata
+                    </button>
+                    <button
+                        onclick="addPlaceholderTracks(event)"
+                        id="placeholderTracksButton"
+                    >
+                        Add Placeholder Tracks
+                    </button>
+                    <button onclick="restart()" id="restartButton">
+                        Restart {{ name }}
+                    </button>
+                </div>
+            </section>
+        </section>
+        <section>
+            <h2>Settings</h2>
+            <div class="settings-page">
+                <div class="settings-section">
+                    <h3>Authentication</h3>
+                    <label class="setting-row">
+                        <input
+                            type="checkbox"
+                            id="authToggle"
+                            onchange="toggleAuth(this.checked)"
+                            {% if auth_enabled %}checked{% endif %}
+                        />
+                        <span>Enable Subsonic API authentication</span>
+                    </label>
+                    <div id="authCreds" class="settings-group {% if not auth_enabled %}hidden{% endif %}">
+                        <small>Username: <span id="authUsernameDisplay">{{ auth_username }}</span></small>
+                        <small>Password: <span id="authPasswordStatus">{% if has_password %}set{% else %}not set{% endif %}</span></small>
+                        <button onclick="changeCredentials()" class="small-btn">Change Credentials</button>
+                        <label class="setting-row" style="margin-top: 0.5rem;">
+                            <span>Auth token</span>
+                            <input type="text" value="{{ cfg.get('auth_token', '') }}" onchange="updateSetting('auth_token', this.value)" class="setting-input" placeholder="Optional token" />
+                        </label>
+                    </div>
+                </div>
+
+                <div class="settings-section">
+                    <h3>General</h3>
+                    <label class="setting-row">
+                        <span>Library path</span>
+                        <input type="text" value="{{ cfg.get('library_path', '') }}" onchange="updateSetting('library_path', this.value)" class="setting-input" />
+                    </label>
+                    <label class="setting-row">
+                        <span>Database path</span>
+                        <input type="text" value="{{ cfg.get('database_path', '') }}" onchange="updateSetting('database_path', this.value)" class="setting-input" />
+                    </label>
+                    <label class="setting-row">
+                        <span>Custom database URI</span>
+                        <input type="text" value="{{ cfg.get('custom_database_uri', '') }}" onchange="updateSetting('custom_database_uri', this.value)" class="setting-input" />
+                    </label>
+                </div>
+
+                <div class="settings-section">
+                    <h3>Management UI</h3>
+                    <label class="setting-row">
+                        <input type="checkbox" {% if cfg.get('management_ui', true) %}checked{% endif %} onchange="updateSetting('management_ui', this.checked)" />
+                        <span>Enable management UI</span>
+                    </label>
+                    <label class="setting-row">
+                        <input type="checkbox" {% if cfg.get('start_web_ui', true) %}checked{% endif %} onchange="updateSetting('start_web_ui', this.checked)" />
+                        <span>Start bundled web UI (bundle.mjs)</span>
+                    </label>
+                    <label class="setting-row">
+                        <span>Item limit on multi-table pages</span>
+                        <input type="number" value="{{ cfg.get('item_limit_on_multi_table_pages', 15) }}" onchange="updateSetting('item_limit_on_multi_table_pages', parseInt(this.value))" class="setting-input" min="1" />
+                    </label>
+                </div>
+
+                <div class="settings-section">
+                    <h3>Music</h3>
+                    <label class="setting-row">
+                        <input type="checkbox" {% if cfg.get('hide_track_number', true) %}checked{% endif %} onchange="updateSetting('hide_track_number', this.checked)" />
+                        <span>Hide track number from titles</span>
+                    </label>
+                    <label class="setting-row">
+                        <input type="checkbox" {% if cfg.get('hide_mix_year', true) %}checked{% endif %} onchange="updateSetting('hide_mix_year', this.checked)" />
+                        <span>Hide mix year from titles</span>
+                    </label>
+                    <label class="setting-row">
+                        <span>Ignored articles (sorting)</span>
+                        <input type="text" value="{{ cfg.get('ignored_articles', '') }}" onchange="updateSetting('ignored_articles', this.value)" class="setting-input" />
+                    </label>
+                    <label class="setting-row">
+                        <input type="checkbox" {% if cfg.get('musicbrainz_metadata', true) %}checked{% endif %} onchange="updateSetting('musicbrainz_metadata', this.checked)" />
+                        <span>Fetch MusicBrainz metadata</span>
+                    </label>
+                    <label class="setting-row">
+                        <input type="checkbox" {% if cfg.get('cache_musicbrainz_responses', true) %}checked{% endif %} onchange="updateSetting('cache_musicbrainz_responses', this.checked)" />
+                        <span>Cache MusicBrainz responses</span>
+                    </label>
+                </div>
+
+                <div class="settings-section">
+                    <h3>Networking</h3>
+                    <label class="setting-row">
+                        <span>Port</span>
+                        <input type="number" value="{{ cfg.get('port', 3443) }}" onchange="updateSetting('port', parseInt(this.value))" class="setting-input" min="1" max="65535" />
+                    </label>
+                    <label class="setting-row">
+                        <span>Host</span>
+                        <input type="text" value="{{ cfg.get('host', '0.0.0.0') }}" onchange="updateSetting('host', this.value)" class="setting-input" />
+                    </label>
+                    <label class="setting-row">
+                        <input type="checkbox" {% if cfg.get('verify_ssl', true) %}checked{% endif %} onchange="updateSetting('verify_ssl', this.checked)" />
+                        <span>Verify SSL</span>
+                    </label>
+                    <label class="setting-row">
+                        <input type="checkbox" {% if cfg.get('allow_cors', true) %}checked{% endif %} onchange="updateSetting('allow_cors', this.checked)" />
+                        <span>Allow CORS</span>
+                    </label>
+                    <label class="setting-row">
+                        <span>Allow origin</span>
+                        <input type="text" value="{{ cfg.get('allow_origin', '*') }}" onchange="updateSetting('allow_origin', this.value)" class="setting-input" />
+                    </label>
+                    <label class="setting-row">
+                        <span>Allow methods</span>
+                        <input type="text" value="{{ cfg.get('allow_methods', ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS']) | join(', ') }}" onchange="updateSetting('allow_methods', this.value.split(',').map(s => s.trim()))" class="setting-input" />
+                    </label>
+                    <label class="setting-row">
+                        <span>Allow headers</span>
+                        <input type="text" value="{{ cfg.get('allow_headers', ['Content-Type', 'Authorization', 'content-type', 'authorization']) | join(', ') }}" onchange="updateSetting('allow_headers', this.value.split(',').map(s => s.trim()))" class="setting-input" />
+                    </label>
+                    <label class="setting-row">
+                        <span>yt-dlp path</span>
+                        <input type="text" value="{{ cfg.get('ytdlp_path', '') }}" onchange="updateSetting('ytdlp_path', this.value)" class="setting-input" />
+                    </label>
+                </div>
+
+                <div class="settings-section">
+                    <h3>Updates</h3>
+                    <label class="setting-row">
+                        <span>Update server URL</span>
+                        <input type="text" value="{{ cfg.get('update_server_url', 'https://azalea-updates.vercel.app') }}" onchange="updateSetting('update_server_url', this.value)" class="setting-input" />
+                    </label>
+                    <label class="setting-row">
+                        <span>Update channel</span>
+                        <input type="text" value="{{ cfg.get('update_channel', 'special-pre-release') }}" onchange="updateSetting('update_channel', this.value)" class="setting-input" />
+                    </label>
+                </div>
+
+                <div class="settings-section">
+                    <h3>Downloads</h3>
+                    <label class="setting-row">
+                        <span>Download path</span>
+                        <input type="text" value="{{ cfg.get('download_path', '') }}" onchange="updateSetting('download_path', this.value)" class="setting-input" />
+                    </label>
+                </div>
+
+                <div class="settings-section">
+                    <h3>Subsonic API</h3>
+                    <label class="setting-row">
+                        <input type="checkbox" {% if cfg.get('subsonic_api', true) %}checked{% endif %} onchange="updateSetting('subsonic_api', this.checked)" />
+                        <span>Enable Subsonic API</span>
+                    </label>
+                    <label class="setting-row">
+                        <input type="checkbox" {% if cfg.get('azalea_subsonic_extensions', true) %}checked{% endif %} onchange="updateSetting('azalea_subsonic_extensions', this.checked)" />
+                        <span>Enable Azalea Subsonic extensions</span>
+                    </label>
+                </div>
+
+                <div class="settings-section">
+                    <h3>Debug</h3>
+                    <label class="setting-row">
+                        <input type="checkbox" {% if cfg.get('quart_debug', true) %}checked{% endif %} onchange="updateSetting('quart_debug', this.checked)" />
+                        <span>Quart debug mode</span>
+                    </label>
+                    <label class="setting-row">
+                        <input type="checkbox" {% if cfg.get('rescan_library_on_startup', true) %}checked{% endif %} onchange="updateSetting('rescan_library_on_startup', this.checked)" />
+                        <span>Rescan library on startup</span>
+                    </label>
+                    <label class="setting-row">
+                        <input type="checkbox" {% if cfg.get('verbose_logging', true) %}checked{% endif %} onchange="updateSetting('verbose_logging', this.checked)" />
+                        <span>Verbose logging</span>
+                    </label>
+                </div>
+
+                <div class="settings-section">
+                    <h3>Logging</h3>
+                    <label class="setting-row">
+                        <span>Log directory</span>
+                        <input type="text" value="{{ cfg.get('log_dir', 'logs') }}" onchange="updateSetting('log_dir', this.value)" class="setting-input" />
+                    </label>
+                    <label class="setting-row">
+                        <span>Max bytes per file</span>
+                        <input type="number" value="{{ cfg.get('log_max_bytes', 10485760) }}" onchange="updateSetting('log_max_bytes', parseInt(this.value))" class="setting-input" min="0" />
+                    </label>
+                    <label class="setting-row">
+                        <span>Backup count</span>
+                        <input type="number" value="{{ cfg.get('log_backup_count', 10) }}" onchange="updateSetting('log_backup_count', parseInt(this.value))" class="setting-input" min="0" />
+                    </label>
+                </div>
+
+                <div class="settings-section">
+                    <h3>Discord</h3>
+                    <label class="setting-row">
+                        <input type="checkbox" {% if cfg.get('discord_rpc', true) %}checked{% endif %} onchange="updateSetting('discord_rpc', this.checked)" />
+                        <span>Enable Discord Rich Presence</span>
+                    </label>
+                    <label class="setting-row">
+                        <span>Display mode</span>
+                        <select onchange="updateSetting('discord_rpc_display', this.value)" class="setting-input">
+                            <option value="artist" {% if cfg.get('discord_rpc_display', 'artist') == 'artist' %}selected{% endif %}>Artist</option>
+                            <option value="song" {% if cfg.get('discord_rpc_display', 'artist') == 'song' %}selected{% endif %}>Song</option>
+                            <option value="azalea" {% if cfg.get('discord_rpc_display', 'artist') == 'azalea' %}selected{% endif %}>Azalea</option>
+                        </select>
+                    </label>
+                </div>
+            </div>
+        </section>
+    </main>
+    {% include 'partials/furniture/Footer.html' %}
+    <script>
+        const rescanButton = document.getElementById("rescanButton");
+        const originalRescanText = rescanButton.innerText;
+        const fetchMetadataButton = document.getElementById(
+            "fetchMetadataButton",
+        );
+        const originalFetchText = fetchMetadataButton.innerText;
+        const placeholderTracksButton = document.getElementById(
+            "placeholderTracksButton",
+        );
+        const originalPlaceholderText = placeholderTracksButton.innerText;
+        const statsContainer = document.getElementById("statsContent");
+
+        function updateStats(stats) {
+            function pct(part, total) {
+                return total > 0 ? ((part / total) * 100).toFixed(1) : "0.0";
+            }
+            statsContainer.innerText =
+                `${stats.songs} songs - ${pct(stats.songs_with_artist_mb, stats.songs)}%\n` +
+                `${stats.artists} artists - ${pct(stats.artists_with_mb, stats.artists)}%\n` +
+                `${stats.albums} albums - ${pct(stats.albums_with_mb, stats.albums)}%\n` +
+                `Metadata completion: ${stats.metadata_pieces_actual}/${stats.metadata_pieces_possible} (${pct(stats.metadata_pieces_actual, stats.metadata_pieces_possible)}%)`;
+        }
+
+        function updateLyricsStats(stats) {
+            const total = stats.songs || 0;
+            const withLyrics = stats.songs_with_lyrics || 0;
+            const synced = stats.songs_with_synced_lyrics || 0;
+            function pct(part, total) {
+                return total > 0 ? ((part / total) * 100).toFixed(1) : "0.0";
+            }
+            const pctWithLyrics = pct(withLyrics, total);
+            const pctSyncedOfTotal = pct(synced, total);
+            const pctSyncedOfLyrics =
+                withLyrics > 0 ? pct(synced, withLyrics) : "0.0";
+            const el = document.getElementById("lyricsStats");
+            if (!el) return;
+            el.innerText = `${withLyrics} songs with lyrics (${pctWithLyrics}%), ${synced} synced (${pctSyncedOfTotal}%, ${pctSyncedOfLyrics}% of songs with lyrics)`;
+        }
+
+        function setFetchingState(fetching) {
+            fetchMetadataButton.disabled = fetching;
+            fetchMetadataButton.innerText = fetching
+                ? "Fetching metadata"
+                : originalFetchText;
+        }
+
+        function connectWebSocket() {
+            const protocol = location.protocol === "https:" ? "wss:" : "ws:";
+            const ws = new WebSocket(`${protocol}//${location.host}/ws`);
+
+            ws.onmessage = function (event) {
+                const msg = JSON.parse(event.data);
+
+                if (msg.type === "scan_status") {
+                    if (msg.scanning) {
+                        rescanButton.innerText = "Scanning...";
+                    } else if (rescanButton.innerText !== originalRescanText) {
+                        rescanButton.innerText = "Rescan Completed.";
+                        setTimeout(() => {
+                            rescanButton.innerText = originalRescanText;
+                        }, 1000);
+                    }
+                } else if (msg.type === "fetch_status") {
+                    if (
+                        !msg.fetching &&
+                        fetchMetadataButton.innerText !== originalFetchText
+                    ) {
+                        setFetchingState(false);
+                        fetchMetadataButton.innerText =
+                            "Metadata Fetch Completed.";
+                        setTimeout(() => {
+                            fetchMetadataButton.innerText = originalFetchText;
+                        }, 1000);
+                    } else {
+                        setFetchingState(msg.fetching);
+                    }
+                } else if (msg.type === "stats") {
+                    updateStats(msg.data);
+                    updateLyricsStats(msg.data);
+                }
+            };
+
+            ws.onclose = function () {
+                setTimeout(connectWebSocket, 2000);
+            };
+        }
+
+        connectWebSocket();
+
+        async function rescan(e) {
+            const button = e.currentTarget;
+            button.innerText = "Asking for rescan...";
+
+            try {
+                const response = await fetch("/rest/startScan.view");
+                if (!response.ok) {
+                    throw new Error(`Response status: ${response.status}`);
+                }
+
+                const result = await response.json();
+
+                if (result["subsonic-response"].scanStatus.scanning) {
+                    button.innerText = "Scanning...";
+                }
+            } catch (error) {
+                console.error(error.message);
+                button.innerText = "Failed to start scan.";
+                setTimeout(() => {
+                    button.innerText = originalRescanText;
+                }, 1000);
+            }
+        }
+
+        async function fetchMetadata(e) {
+            const button = e.currentTarget;
+
+            try {
+                const response = await fetch("/fetch-metadata");
+                if (!response.ok) {
+                    throw new Error(`Response status: ${response.status}`);
+                }
+
+                const result = await response.json();
+
+                if (result.status === "started") {
+                    setFetchingState(true);
+                } else if (result.status === "already_running") {
+                    button.innerText = "Already Running";
+                    setTimeout(() => {
+                        button.innerText = originalFetchText;
+                    }, 1000);
+                }
+            } catch (error) {
+                console.error(error.message);
+                button.innerText = "Failed to fetch.";
+                setTimeout(() => {
+                    button.innerText = originalFetchText;
+                }, 1000);
+            }
+        }
+
+        async function resetMetadata(e) {
+            const button = e.currentTarget;
+            const originalText = button.innerText;
+            button.innerText = "Resetting...";
+
+            try {
+                const response = await fetch("/reset-metadata");
+                if (!response.ok) {
+                    throw new Error(`Response status: ${response.status}`);
+                }
+
+                button.innerText = "Metadata Reset.";
+                setTimeout(() => {
+                    button.innerText = originalText;
+                }, 1000);
+            } catch (error) {
+                console.error(error.message);
+                button.innerText = "Failed to reset.";
+                setTimeout(() => {
+                    button.innerText = originalText;
+                }, 1000);
+            }
+        }
+
+        async function addPlaceholderTracks(e) {
+            const button = e.currentTarget;
+            const originalText = button.innerText;
+            button.innerText = "Adding...";
+            button.disabled = true;
+
+            try {
+                const response = await fetch("/add-placeholder-tracks");
+                if (!response.ok) {
+                    throw new Error(`Response status: ${response.status}`);
+                }
+
+                const result = await response.json();
+                button.innerText = `Added ${result.placeholders_added} placeholders`;
+                setTimeout(() => {
+                    button.innerText = originalText;
+                    button.disabled = false;
+                }, 2000);
+            } catch (error) {
+                console.error(error.message);
+                button.innerText = "Failed.";
+                setTimeout(() => {
+                    button.innerText = originalText;
+                    button.disabled = false;
+                }, 1000);
+            }
+        }
+
+        async function restart() {
+            try {
+                const response = await fetch("/rest/restart");
+                if (!response.ok) {
+                    throw new Error(`Response status: ${response.status}`);
+                }
+
+                const result = await response.json();
+                if (result["subsonic-response"].status === "ok") {
+                    alert("Server is restarting.");
+                } else {
+                    alert("Failed to restart server.");
+                }
+            } catch (error) {
+                console.error(error.message);
+                alert("Error occurred while trying to restart server.");
+            }
+        }
+
+        async function toggleAuth(enabled) {
+            const credsDiv = document.getElementById("authCreds");
+            const usernameDisplay = document.getElementById(
+                "authUsernameDisplay",
+            );
+            const passwordStatus =
+                document.getElementById("authPasswordStatus");
+
+            try {
+                if (enabled) {
+                    const resp = await fetch("/auth-config");
+                    if (!resp.ok) {
+                        throw new Error(
+                            `GET /auth-config returned ${resp.status}`,
+                        );
+                    }
+                    const cfg = await resp.json();
+
+                    if (
+                        !cfg.has_password ||
+                        !cfg.auth_username ||
+                        cfg.auth_username === "admin"
+                    ) {
+                        const username = prompt(
+                            "Enter username for Subsonic API authentication:",
+                            cfg.auth_username || "admin",
+                        );
+                        if (!username) {
+                            document.getElementById("authToggle").checked =
+                                false;
+                            return;
+                        }
+                        const password = prompt(
+                            "Enter password for Subsonic API authentication:",
+                        );
+                        if (!password) {
+                            document.getElementById("authToggle").checked =
+                                false;
+                            return;
+                        }
+                        const result = await fetch("/auth-config", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({
+                                auth: true,
+                                auth_username: username,
+                                auth_password: password,
+                            }),
+                        });
+                        if (!result.ok) {
+                            throw new Error(
+                                `POST /auth-config returned ${result.status}`,
+                            );
+                        }
+                        usernameDisplay.textContent = username;
+                        passwordStatus.textContent = "set";
+                    } else {
+                        const result = await fetch("/auth-config", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ auth: true }),
+                        });
+                        if (!result.ok) {
+                            throw new Error(
+                                `POST /auth-config returned ${result.status}`,
+                            );
+                        }
+                    }
+                    credsDiv.classList.remove("hidden");
+                } else {
+                    const result = await fetch("/auth-config", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ auth: false }),
+                    });
+                    if (!result.ok) {
+                        throw new Error(
+                            `POST /auth-config returned ${result.status}`,
+                        );
+                    }
+                    credsDiv.classList.add("hidden");
+                }
+            } catch (error) {
+                console.error("Auth toggle failed:", error);
+                alert(
+                    "Failed to update auth settings. The server may need to be restarted.",
+                );
+                document.getElementById("authToggle").checked = !enabled;
+            }
+        }
+
+        async function changeCredentials() {
+            const usernameDisplay = document.getElementById(
+                "authUsernameDisplay",
+            );
+            const passwordStatus =
+                document.getElementById("authPasswordStatus");
+
+            try {
+                const resp = await fetch("/auth-config");
+                if (!resp.ok) {
+                    throw new Error(`GET /auth-config returned ${resp.status}`);
+                }
+                const cfg = await resp.json();
+
+                const username = prompt(
+                    "Enter new username:",
+                    cfg.auth_username || "admin",
+                );
+                if (!username) return;
+                const password = prompt("Enter new password:");
+                if (!password) return;
+
+                const result = await fetch("/auth-config", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        auth: true,
+                        auth_username: username,
+                        auth_password: password,
+                    }),
+                });
+                if (!result.ok) {
+                    throw new Error(
+                        `POST /auth-config returned ${result.status}`,
+                    );
+                }
+                usernameDisplay.textContent = username;
+                passwordStatus.textContent = "set";
+            } catch (error) {
+                console.error("Change credentials failed:", error);
+                alert(
+                    "Failed to change credentials. The server may need to be restarted.",
+                );
+            }
+        }
+        async function updateSetting(key, value) {
+            try {
+                const resp = await fetch("/config", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ [key]: value }),
+                });
+                if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+            } catch (err) {
+                console.error(`Failed to save ${key}:`, err);
+            }
+        }
+    </script>
+</body>

@@ -1,0 +1,12 @@
+{% include 'partials/furniture/Head.html' %}
+<body>
+    {% if hide_header %} {% include 'partials/furniture/Header.html' %} {% endif
+    %}
+    <main>
+        <h1>
+            {% if http_status_code %}<code>{{ http_status_code }}</code>{% endif
+            %} {{ message }}
+        </h1>
+    </main>
+    {% include 'partials/furniture/Footer.html' %}
+</body>

@@ -1,0 +1,62 @@
+<table>
+    <tr>
+        <th>Name</th>
+        <th>Artist</th>
+        <th>Duration</th>
+        <th>Songs</th>
+    </tr>
+    {% for album in albums %}
+    <tr
+        class="{% if item_limit_on_multi_table_pages %}{% if loop.index > item_limit_on_multi_table_pages %}hidden{% endif %}{% endif %}"
+    >
+        <td>
+            <a href="/browse/{{ collection.id }}/album/{{ album.album_id }}"
+                >{% if album.name %}{{ album.name }}{% else %}Unknown {% endif
+                %}</a
+            >
+        </td>
+        <td>
+            <a href="/browse/{{ collection.id }}/artist/{{ album.artist_id }}"
+                >{% if album.artist_name %}{{ album.artist_name }}{% else
+                %}Unknown Artist{% endif %}</a
+            >
+        </td>
+        <td>
+            {%if album.duration_human %}
+            <time datetime="PT{{ (album.duration / 1000)|round|int }}S">
+                {{ album.duration_human }}
+            </time>
+            {% else %}-{%
+            endif %}
+        </td>
+        <td>{{ album.song_count }}</td>
+    </tr>
+    {% endfor %}
+</table>
+{% if item_limit_on_multi_table_pages %} {% if albums|length >
+item_limit_on_multi_table_pages %}
+<button
+    class="text-button"
+    onclick="toggleAlbumLimit()"
+    style="margin-top: 0.425rem"
+>
+    show all...
+</button>
+{% endif %}
+<script>
+    function toggleAlbumLimit() {
+        const hiddenRows = document.querySelectorAll("tr.hidden");
+        const button = event.currentTarget;
+        if (hiddenRows.length > 0) {
+            hiddenRows.forEach((row) => row.classList.remove("hidden"));
+            hiddenRows.forEach((row) => row.classList.add("visible"));
+            button.textContent = "show less...";
+        } else {
+            const visibleRows = document.querySelectorAll("tr.visible");
+            visibleRows.forEach((row) => row.classList.remove("visible"));
+            visibleRows.forEach((row) => row.classList.add("hidden"));
+            button.textContent = "show more...";
+        }
+    }
+</script>
+{% endif %}

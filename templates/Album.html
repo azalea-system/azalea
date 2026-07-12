@@ -1,0 +1,9 @@
+{% include 'partials/furniture/Head.html' %}
+<body>
+    {% include 'partials/furniture/Header.html' %}
+    <main>
+        <h1>{{ album.name }}</h1>
+        {% set songs = album.songs %} {% include 'partials/SongList.html' %}
+    </main>
+    {% include 'partials/furniture/Footer.html' %}
+</body>

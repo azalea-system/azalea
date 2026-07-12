@@ -1,0 +1,32 @@
+{% include 'partials/furniture/Head.html' %}
+<body>
+    {% include 'partials/furniture/Header.html' %}
+    <main>
+        <h1>
+            Artists in collection '<a href="/browse/{{ collection.id }}"
+                >{{ collection.name }}</a
+            >'
+        </h1>
+        <p>{{ artists|length }} artists</p>
+        <table>
+            <tr>
+                <th>Name</th>
+                <th>Album Count</th>
+                <th>Song Count</th>
+            </tr>
+            {% for artist in artists %}
+            <tr>
+                <td>
+                    <a
+                        href="/browse/{{ collection.id }}/artist/{{ artist.artist_id }}"
+                        >{{ artist.name }}</a
+                    >
+                </td>
+                <td>{% if artist.album_count or artist.album_count == 0 %}{{ artist.album_count }}{% else %}?{% endif %}</td>
+                <td>{% if artist.song_count or artist.song_count == 0 %}{{ artist.song_count }}{% else %}?{% endif %}</td>
+            </tr>
+            {% endfor %}
+        </table>
+    </main>
+    {% include 'partials/furniture/Footer.html' %}
+</body>

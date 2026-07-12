@@ -1,0 +1,27 @@
+{% include 'partials/furniture/Head.html' %}
+<body>
+    {% include 'partials/furniture/Header.html' %}
+    <main>
+        <h1>
+            Folders in collection '<a href="/browse/{{ collection.id }}"
+                >{{ collection.name }}</a
+            >'
+        </h1>
+        <p>{{ folders|length }} folders</p>
+        <table>
+            <tr>
+                <th>Name</th>
+            </tr>
+            {% for folder in folders %}
+            <tr>
+                <td>
+                    <a href="/browse/{{ collection.id }}/folder/{{ folder }}"
+                        >{{ folder }}</a
+                    >
+                </td>
+            </tr>
+            {% endfor %}
+        </table>
+    </main>
+    {% include 'partials/furniture/Footer.html' %}
+</body>

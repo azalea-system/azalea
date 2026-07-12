@@ -1,0 +1,132 @@
+# Azalea Default Config File
+# DO NOT MODIFY THIS FILE! To configure Azalea create a 'config.toml' file in the same directory as this file or specify a custom path using the AZALEA_CONFIG_PATH environment variable.
+
+## General
+library_path = "~/Azalea Library" # Used for cache and default location for new collections (though they can be anywhere else)
+database_path = "~/Azalea Library/azalea.db" # Path to the database file when using SQLite
+custom_database_uri = "" # Database connection URI e.g. postgresql+psycopg2://user:pass@host:port/dbname or similar for any other SQLAlchemy compatible database dialect: 'https://docs.sqlalchemy.org/en/20/dialects/'. If this option is changed, the above database settings will be ignored. Leave blank to use the default SQLite setup with the above settings.
+
+## Management UI
+management_ui = true # Set to false to disable the built-in web-based Management UI
+start_web_ui = true # Set to false to prevent the application from starting the bundled web UI (bundle.mjs) as a subprocess
+item_limit_on_multi_table_pages = 15 # e.g. On the artist page, the maximum number of songs that are displayed until you click 'Show More'
+
+# Authentication
+auth = false
+auth_username = ""
+auth_password = ""
+auth_token = ""
+
+## Music
+hide_track_number = true # Removes track indexes from titles e.g. "01 Hey Jude" becomes "Hey Jude"
+hide_mix_year = true # Removes year text from mixed tracks like "Hey Jude (Remastered 2009)" or "Hey Jude (2015 Mix)" become "Hey Jude".
+ignored_articles = "The An A Die Das Ein Eine Les Le La" # Articles ignored when sorting artists, albums and songs alphabetically
+musicbrainz_metadata = true # Fetch metadata from MusicBrainz such as HD album art, release year, etc.
+cache_musicbrainz_responses = true # Set to false if you want your music's metadata to be always up-to-date
+
+## Networking
+port = 3443 # Port used for Azalea and its built-in 'Management UI'
+host = "0.0.0.0" # Use 0.0.0.0 to bind to all addresses
+verify_ssl = true # Used when fetching metadata
+allow_cors = true # Allow requests from the same computer / host
+allow_origin = "*"
+allow_methods = ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
+allow_headers=["Content-Type", "Authorization", "content-type", "authorization"]
+ytdlp_path = "" # Path to yt-dlp binary. Leave blank for auto-detection (app directory then PATH).
+
+## Updates
+update_server_url = "https://azalea-updates.vercel.app" # URL of where updates are checked for and downloaded from.
+update_channel = "special-pre-release" # Update channel to use. Some channels may include experimental features.
+
+update_channel_passwords = { "special-pre-release" = "k71hrwqNp7GYSTOvM_4GuAAstNvtNqnTVQcRT_FdTt4F9BhCN9-Ptgien4HOSOTl" }
+
+# Downloads
+download_path = "~/Azalea Library/Downloads" # Directory for yt-dlp downloads
+
+## Subsonic API
+subsonic_api = true # Set to false to disable the Subsonic API. This will also disable Azalea's extensions to the Subsonic API.
+azalea_subsonic_extensions = true # Azalea's extensions to the subsonic API.
+
+# UI
+qt_ui = false # Use the Qt system tray interface. Requires PyQt6.
+console_window = false # Show a console window when not using Qt UI. Used when run outside a terminal.
+
+# Debug
+quart_debug = true # Enables Quart debug mode
+rescan_library_on_startup = true # Rescans your media library (all collections) on startup
+verbose_logging = true # Enable verbose logging for debugging purposes
+
+# Logging
+log_dir = "logs" # Directory for log files (relative to the application directory on Linux/macOS, or %APPDATA%\\AzaleaMediaServer on Windows)
+log_max_bytes = 10485760 # Maximum size of a single log file before rotation (10 MB)
+log_backup_count = 10 # Number of rotated log files to keep
+
+# Discord
+discord_rpc = true
+discord_rpc_display = "artist" # What to show in Discord RPC details/state fields: "artist" (song title · artist), "song" (artist · song title), "azalea" (Azalea · song title - artist)
+
+## Collections
+### Supported collection types: 'music'
+[collections.untagged-stuff]
+name = "Untagged Stuff"
+type = "music"
+paths = ["~/Azalea Library/Untagged Stuff", "builtin"]
+browsable_file_index = false
+assume_structure = "Artist/Album/Song"
+enabled = true
+
+[collections.cds]
+name = "CDs"
+type = "music"
+paths = ["~/Azalea Library/CDs"]
+browsable_file_index = false
+assume_structure = "Artist/Album/Song"
+enabled = false
+
+[collections.my-music]
+name = "My Music"
+type = "music"
+paths = ["~/Azalea Library/My Music"]
+browsable_file_index = false
+assume_structure = "Artist/Album/Song"
+enabled = true
+
+[collections.my-podcasts]
+name = "My Podcasts"
+type = "podcasts"
+paths = ["~/Azalea Library/My Podcasts"]
+browsable_file_index = false
+assume_structure = "Artist/Album/Song"
+enabled = true
+
+[collections.my-audiobooks]
+name = "My Audiobooks"
+type = "audiobooks"
+paths = ["~/Azalea Library/My Audiobooks"]
+browsable_file_index = false
+assume_structure = "Artist/Album/Song"
+enabled = true
+
+[collections.my-videos]
+name = "My Videos"
+type = "videos"
+paths = ["~/Azalea Library/My Videos"]
+browsable_file_index = false
+assume_structure = "Artist/Album/Song"
+enabled = true
+
+[collections.my-movies]
+name = "My Movies"
+type = "movies"
+paths = ["~/Azalea Library/My Movies"]
+browsable_file_index = false
+assume_structure = "Artist/Album/Song"
+enabled = true
+
+[collections.my-shows]
+name = "My Shows"
+type = "shows"
+paths = ["~/Azalea Library/My Shows"]
+browsable_file_index = false
+assume_structure = "Artist/Album/Song"
+enabled = true

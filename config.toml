@@ -1,0 +1,4 @@
+auth = true
+auth_username = "admin"
+auth_password = "pbkdf2_sha256$200000$2518878426f6e60567bf15072f885c2e$f485b7c656147056bfa992b42803fe3bf92dc531187fb66ce26f4c15c2c5b501"
+auth_token = "21232f297a57a5a743894a0e4a801fc3"

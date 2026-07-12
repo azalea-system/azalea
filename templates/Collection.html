@@ -1,0 +1,26 @@
+{% include 'partials/furniture/Head.html' %}
+<body>
+    {% include 'partials/furniture/Header.html' %}
+    <main>
+        <h1>Collection '{{ collection.name }}'</h1>
+        {% if collection.type == "music" %}
+        <ul>
+            {% for entity in nav_entities %}
+            <li>
+                <a href="/browse/{{ collection.id }}/{{ entity.plural }}">{{ entity.plural|capitalize }}</a>
+            </li>
+            {% endfor %}
+        </ul>
+        <ul>
+            <li>
+                <a href="/settings/{{ collection.id }}">Settings</a>
+            </li>
+        </ul>
+        {% else %}
+        <p>
+            Collections of type '{{ collection.type }}' are not supported yet.
+        </p>
+        {% endif %}
+    </main>
+    {% include 'partials/furniture/Footer.html' %}
+</body>
