@@ -62,12 +62,12 @@ fi
 SCRIPT_DIR="$(dirname "$(readlink -f "$0")")"
 SRC_DIR="$SCRIPT_DIR/src"
 
-echo "=== Cleaning up previous source directory ==="
+echo "Cleaning up previous source directory"
 rm -rf "$SRC_DIR"
 mkdir -p "$SRC_DIR"
 
 if [ "$SKIP_WEB" = false ]; then
-    echo "=== Compiling Frontend Assets ==="
+    echo "Compiling Frontend Assets"
     rm -rf build
     cd ../azalea-web
     rm -rf build
@@ -75,10 +75,10 @@ if [ "$SKIP_WEB" = false ]; then
     cd ../azalea
     mv ../azalea-web/build .
 else
-    echo "=== Skipping Frontend Compilation (--skip-web active) ==="
+    echo "Skipping Frontend Compilation (--skip-web active)"
 fi
 
-echo "=== Copying backend files (azalea) ==="
+echo "Copying backend files (azalea)"
 for f in "$SCRIPT_DIR"/*.py; do
     [ -f "$f" ] && cp "$f" "$SRC_DIR/"
 done
@@ -91,7 +91,7 @@ for d in templates static docs builtin; do
     [ -d "$SCRIPT_DIR/$d" ] && cp -r "$SCRIPT_DIR/$d" "$SRC_DIR/$d"
 done
 
-echo "=== Copying frontend files (azalea-web) ==="
+echo "Copying frontend files (azalea-web)"
 WEB_DIR="$SRC_DIR/azalea-web"
 mkdir -p "$WEB_DIR"
 
@@ -109,13 +109,15 @@ for f in ~/Programming/azalea-web/package.json ~/Programming/azalea-web/svelte.c
     [ -f "$f" ] && cp "$f" "$WEB_DIR/"
 done
 
-echo "=== Updating installer.iss metadata & version tags ==="
+rm -rf src/azalea-web/build
+
+echo "Updating installer.iss metadata & version tags"
 if [ -f "$SCRIPT_DIR/installer.iss" ]; then
     sed -i "s/^OutputBaseFilename=.*/OutputBaseFilename=Azalea ${TAG} Setup/" "$SCRIPT_DIR/installer.iss"
     sed -i "s/^AppVersion=.*/AppVersion=${TAG}/" "$SCRIPT_DIR/installer.iss"
 fi
 
-echo "=== Done. Contents of $SRC_DIR ==="
+echo "Done. Contents of $SRC_DIR"
 ls -la "$SRC_DIR"
 echo ""
 ls -la "$SRC_DIR"/azalea-web/

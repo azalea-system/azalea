@@ -221,3 +221,5 @@ __marimo__/
 
 # Azalea
 config.toml
+src
+*Setup.exe
