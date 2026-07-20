@@ -981,6 +981,22 @@ def add_routes(app):
             "startTime": start_time,
             "albumId": nowplaying.get("album_id"),
         }
+        album_id = nowplaying.get("album_id")
+        if album_id:
+            try:
+                conn = db.get_conn()
+                if conn is not None:
+                    res = conn.execute(
+                        text(
+                            "select image_url from album_images where album_id = :album_id limit 1"
+                        ),
+                        {"album_id": album_id},
+                    ).mappings().first()
+                    if res and res.get("image_url"):
+                        nowplaying_data["imageUrl"] = res.get("image_url")
+                    conn.close()
+            except Exception:
+                pass
         return await make_response({"nowplaying": nowplaying_data})
 
     @app.route("/rest/getStarred")
