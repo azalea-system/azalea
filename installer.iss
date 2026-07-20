@@ -1,6 +1,6 @@
 [Setup]
 AppName=Azalea Media Server
-AppVersion=1.0a
+AppVersion=1.1a
 AppPublisher=Ethan Martin
 AppPublisherURL=https://github.com/yuckdevchan
 AppComments=The media server solution that cares.
@@ -18,7 +18,7 @@ LZMADictionarySize=153600
 LZMABlockSize=153600
 SolidCompression=yes
 OutputDir=.
-OutputBaseFilename=Azalea 1.0a Setup
+OutputBaseFilename=Azalea 1.1a Setup
 SetupIconFile=app_icon.ico
 PrivilegesRequired=admin
 ArchitecturesInstallIn64BitMode=x64compatible
@@ -32,7 +32,7 @@ CloseApplications=yes
 Name: "core"; Description: "Azalea Core Server Files"; Types: full custom compact; Flags: fixed
 Name: "docs"; Description: "Azalea Documentation Files"; Types: full custom compact;
 Name: "cavatina"; Description: "Include Beethoven Op. 130 Cavatina MP3"; Types: full custom;
-Name: "src"; Description: "Include source code"; Types: full custom;
+; Name: "src"; Description: "Include source code"; Types: full custom;
 Name: "web_component"; Description: "Install Azalea Web Component"; Types: full custom compact
 Name: "vlc_component"; Description: "Download and Install VLC Media Player"; Types: full; ExtraDiskSpaceRequired: 44040192
 Name: "node_setup"; Description: "Download and Install Node.js v24.18.0 for Web UI"; Types: full custom; ExtraDiskSpaceRequired: 60000000
@@ -61,7 +61,7 @@ Source: "https://nodejs.org/dist/v24.18.0/node-v24.18.0-x64.msi"; DestDir: "{app
 
 Source: "https://get.videolan.org/vlc/3.0.23/win64/vlc-3.0.23-win64.exe"; DestDir: "{app}"; DestName: "vlc_installer.exe"; Flags: external download ignoreversion; ExternalSize: 44040192; Check: WizardIsComponentSelected('vlc_component')
 
-Source: "https://github.com/yt-dlp/yt-dlp/releases/download/2026.06.09/yt-dlp.exe"; DestDir: "{app}"; DestName: "yt-dlp.exe"; Flags: external download ignoreversion; ExternalSize: 18202192; Check: ShouldDownloadYtdlp
+Source: "https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp.exe"; DestDir: "{app}"; DestName: "yt-dlp.exe"; Flags: external download ignoreversion; ExternalSize: 18202192; Check: ShouldDownloadYtdlp
 
 Source: "main.py"; DestDir: "{app}"; Components: core
 Source: "requirements.txt"; DestDir: "{app}"; Components: core
@@ -86,9 +86,9 @@ Source: "qt_ui.py"; DestDir: "{app}"; Components: core
 Source: "templates\*"; DestDir: "{app}\templates"; Flags: recursesubdirs createallsubdirs; Components: core
 Source: "static\*"; DestDir: "{app}\static"; Flags: recursesubdirs createallsubdirs; Components: core
 
-Source: "builtin\*"; DestDir: "{app}\builtin"; Flags: recursesubdirs createallsubdirs; Components: cavatina
+Source: "assets\cavatina.mp3"; DestDir: "{app}\builtin"; Flags: recursesubdirs createallsubdirs; Components: cavatina
 
-Source: "src\*"; DestDir: "{app}\Source Code"; Flags: recursesubdirs createallsubdirs; Components: src
+; Source: "src\*"; DestDir: "{app}\Source Code"; Flags: recursesubdirs createallsubdirs; Components: src
 
 Source: "docs\*"; DestDir: "{app}\docs"; Flags: recursesubdirs createallsubdirs; Components: docs
 
