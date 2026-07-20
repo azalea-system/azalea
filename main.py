@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+import sys
+sys.modules["main"] = sys.modules[__name__]
 import argparse
 import asyncio
 import ctypes
@@ -7,7 +9,6 @@ import logging
 import logging.handlers
 import os
 import subprocess
-import sys
 import time
 from pathlib import Path
 
