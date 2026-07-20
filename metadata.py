@@ -46,7 +46,7 @@ cache_file = Path(cache_path, "musicbrainz_cache.json")
 
 result_types = {
     "artist": [musicbrainzngs.search_artists, "artist-list"],
-    "album": [musicbrainzngs.search_releases, "release-list"],
+    "album": [musicbrainzngs.search_release_groups, "release-group-list"],
 }
 
 
@@ -155,18 +155,14 @@ def album_to_musicbrainz_data(
         "album", album_name, artist=artist_musicbrainz_id, conn=conn
     )
     if result and contingent_key and result.get(contingent_key):
-        album_data = result[contingent_key][0]
+        rg_data = result[contingent_key][0]
+        if rg_data.get("first-release-date"):
+            rg_data["date"] = rg_data["first-release-date"]
         image_url = None
-        try:
-            rg = album_data.get("release-group") or album_data.get("release-group-list")
-        except Exception:
-            rg = None
-        if isinstance(rg, dict) and rg.get("first-release-date"):
-            album_data["date"] = rg["first-release-date"]
-        if album_data.get("id"):
-            image_url = f"https://coverartarchive.org/release/{album_data.get('id')}/front-250.jpg"
-        album_data["image_url"] = image_url
-        return album_data
+        if rg_data.get("id"):
+            image_url = f"https://coverartarchive.org/release-group/{rg_data['id']}/front-250.jpg"
+        rg_data["image_url"] = image_url
+        return rg_data
 
 
 def fetch_artist_image_url(artist_name: str) -> str | None:
@@ -404,23 +400,61 @@ def ensure_fetch_for_nowplaying(
     t.start()
 
 
-def album_to_track_listing(release_mbid: str, conn: Connection) -> list[dict] | None:
-    """Fetch track listing for a MusicBrainz release.
-
-    Returns a list of dicts with keys 'disc', 'track', 'title', and 'duration',
-    or None if the data cannot be fetched.
-    """
+def _get_release_from_release_group(release_group_mbid: str, conn: Connection) -> str | None:
     if not config["musicbrainz_metadata"]:
         return None
 
-    result_type = "release_tracks"
-    query = release_mbid
+    result_type = "release_group_releases"
+    query = release_group_mbid
+
+    cached = get_cached_musicbrainz_response(result_type, query, 1, conn)
+    if cached:
+        release_list = cached.get("release-list")
+        if release_list:
+            return release_list[0].get("id")
+
+    tries = 0
+    while tries < 5:
+        tries += 1
+        try:
+            result = musicbrainzngs.browse_releases(
+                release_group=release_group_mbid,
+                limit=100,
+            )
+        except NetworkError:
+            result = None
+        if result and result.get("release-list"):
+            releases = result["release-list"]
+            if releases:
+                release_id = releases[0]["id"]
+                result_data = {"release-list": [{"id": release_id}]}
+                if config["cache_musicbrainz_responses"]:
+                    try:
+                        cache_musicbrainz_response(
+                            result_type, query, 1, result_data, conn
+                        )
+                    except Exception:
+                        pass
+                return release_id
+    return None
+
+
+def album_to_track_listing(release_group_mbid: str, conn: Connection) -> list[dict] | None:
+    if not config["musicbrainz_metadata"]:
+        return None
+
+    result_type = "release_group_tracks"
+    query = release_group_mbid
 
     cached = get_cached_musicbrainz_response(result_type, query, 1, conn)
     if cached:
         track_list = cached.get("track-list")
         if track_list:
             return track_list
+
+    release_mbid = _get_release_from_release_group(release_group_mbid, conn)
+    if not release_mbid:
+        return None
 
     tries = 0
     while tries < 5:
@@ -474,43 +508,32 @@ def album_to_track_listing(release_mbid: str, conn: Connection) -> list[dict] | 
 
 
 def get_artist_releases(artist_mbid: str, conn: Connection) -> list[dict] | None:
-    """Fetch all album-type releases for an artist from MusicBrainz.
-
-    Returns a list of release dicts with keys 'id', 'title', 'date', 'release_group_id',
-    or None if the data cannot be fetched.
-    """
     if not config["musicbrainz_metadata"]:
         return None
 
-    result_type = "artist_releases"
+    result_type = "artist_release_groups"
     query = artist_mbid
 
     cached = get_cached_musicbrainz_response(result_type, query, 100, conn)
     if cached:
-        release_list = cached.get("release-list")
-        if release_list:
-            return release_list
+        rg_list = cached.get("release-group-list")
+        if rg_list:
+            return rg_list
 
     tries = 0
     while tries < 5:
         tries += 1
         try:
-            result = musicbrainzngs.browse_releases(
+            result = musicbrainzngs.browse_release_groups(
                 artist=artist_mbid,
                 limit=100,
-                includes=["release-groups"],
+                release_type=["album"],
             )
         except NetworkError:
             result = None
-        if result and result.get("release-list"):
-            releases = result["release-list"]
-            # Filter to album-type releases
-            album_releases = [
-                r
-                for r in releases
-                if r.get("release-group", {}).get("type", "").lower() == "album"
-            ]
-            result_data = {"release-list": album_releases}
+        if result and result.get("release-group-list"):
+            rgs = result["release-group-list"]
+            result_data = {"release-group-list": rgs}
             if config["cache_musicbrainz_responses"]:
                 try:
                     cache_musicbrainz_response(
@@ -518,7 +541,7 @@ def get_artist_releases(artist_mbid: str, conn: Connection) -> list[dict] | None
                     )
                 except Exception:
                     pass
-            return album_releases
+            return rgs
     return None
 
 

@@ -1545,10 +1545,8 @@ def add_artist_musicbrainz_albums(artist_id: str, conn: Connection) -> dict:
                 skipped.append(title)
                 continue
 
-            release_mbid = release.get("id")
-            release_date = release.get("date", "")
-            release_group = release.get("release-group", {})
-            release_group_mbid = release_group.get("id")
+            rg_mbid = release.get("id")
+            release_date = release.get("first-release-date", "")
 
             base_slug = slugify_name(title)
             album_id = base_slug
@@ -1570,7 +1568,7 @@ def add_artist_musicbrainz_albums(artist_id: str, conn: Connection) -> dict:
                     "artist_id": artist_id,
                     "name": title,
                     "collection_id": collection["id"],
-                    "musicbrainz_id": release_mbid,
+                    "musicbrainz_id": rg_mbid,
                     "release_date": release_date,
                 },
             )
@@ -1578,7 +1576,7 @@ def add_artist_musicbrainz_albums(artist_id: str, conn: Connection) -> dict:
 
             try:
                 image_url = (
-                    f"https://coverartarchive.org/release/{release_mbid}/front-250.jpg"
+                    f"https://coverartarchive.org/release-group/{rg_mbid}/front-250.jpg"
                 )
                 conn.execute(
                     text(
@@ -1597,7 +1595,7 @@ def add_artist_musicbrainz_albums(artist_id: str, conn: Connection) -> dict:
                     "Failed to download cover for album '%s' (%s)", title, album_id
                 )
 
-            tracks = metadata.album_to_track_listing(release_mbid, conn)
+            tracks = metadata.album_to_track_listing(rg_mbid, conn)
             if tracks:
                 track_added = 0
                 for track_info in tracks:
@@ -1863,7 +1861,7 @@ def init_library(
         conn.execute(
             text("""
             insert or ignore into album_images (album_id, image_url)
-            select a.album_id, 'https://coverartarchive.org/release/' || a.musicbrainz_id || '/front-250.jpg'
+            select a.album_id, 'https://coverartarchive.org/release-group/' || a.musicbrainz_id || '/front-250.jpg'
             from albums a
             left join album_images ai on a.album_id = ai.album_id
             where a.musicbrainz_id is not null and ai.image_url is null
