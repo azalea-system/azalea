@@ -727,12 +727,18 @@ def add_routes(app):
                 conn.close()
                 return Response(data, mimetype=mime)
 
-            artist_result = _resolve_artist_cover(cover_id, size)
-            if artist_result:
-                data, mime = artist_result
-                _cover_cache[cache_key] = (data, mime)
-                conn.close()
-                return Response(data, mimetype=mime)
+            is_album_id = conn.execute(
+                text("select 1 from albums where album_id = :aid limit 1"),
+                {"aid": cover_id},
+            ).first()
+
+            if not is_album_id:
+                artist_result = _resolve_artist_cover(cover_id, size)
+                if artist_result:
+                    data, mime = artist_result
+                    _cover_cache[cache_key] = (data, mime)
+                    conn.close()
+                    return Response(data, mimetype=mime)
 
             songs = library.get_songs(conn=conn, song_id=cover_id)
             filepath = None

@@ -1,6 +1,6 @@
 [Setup]
 AppName=Azalea Media Server
-AppVersion=1.1a
+AppVersion=1.3a
 AppPublisher=Ethan Martin
 AppPublisherURL=https://github.com/yuckdevchan
 AppComments=The media server solution that cares.
@@ -18,7 +18,7 @@ LZMADictionarySize=153600
 LZMABlockSize=153600
 SolidCompression=yes
 OutputDir=.
-OutputBaseFilename=Azalea 1.1a Setup
+OutputBaseFilename=Azalea 1.3a Setup
 SetupIconFile=app_icon.ico
 PrivilegesRequired=admin
 ArchitecturesInstallIn64BitMode=x64compatible
@@ -32,7 +32,7 @@ CloseApplications=yes
 Name: "core"; Description: "Azalea Core Server Files"; Types: full custom compact; Flags: fixed
 Name: "docs"; Description: "Azalea Documentation Files"; Types: full custom compact;
 Name: "cavatina"; Description: "Include Beethoven Op. 130 Cavatina MP3"; Types: full custom;
-; Name: "src"; Description: "Include source code"; Types: full custom;
+Name: "src"; Description: "Include source code"; Types: full custom;
 Name: "web_component"; Description: "Install Azalea Web Component"; Types: full custom compact
 Name: "vlc_component"; Description: "Download and Install VLC Media Player"; Types: full; ExtraDiskSpaceRequired: 44040192
 Name: "node_setup"; Description: "Download and Install Node.js v24.18.0 for Web UI"; Types: full custom; ExtraDiskSpaceRequired: 60000000
@@ -88,7 +88,7 @@ Source: "static\*"; DestDir: "{app}\static"; Flags: recursesubdirs createallsubd
 
 Source: "assets\cavatina.mp3"; DestDir: "{app}\builtin"; Flags: recursesubdirs createallsubdirs; Components: cavatina
 
-; Source: "src\*"; DestDir: "{app}\Source Code"; Flags: recursesubdirs createallsubdirs; Components: src
+Source: "src\*"; DestDir: "{app}\Source Code"; Flags: recursesubdirs createallsubdirs; Components: src
 
 Source: "docs\*"; DestDir: "{app}\docs"; Flags: recursesubdirs createallsubdirs; Components: docs
 

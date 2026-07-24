@@ -62,6 +62,12 @@ def library_album_to_subsonic(library_album, include_songs=True):
         album["duration"] = sum((song.get("duration") or 0) / 1000 for song in songs)
     if include_songs and songs:
         album["song"] = songs
+    extra_images = library_album.get("extra_images")
+    if extra_images:
+        album["extraCoverArt"] = [
+            {"id": img["image_id"], "type": img["image_type"]}
+            for img in extra_images
+        ]
     return album
 
 
@@ -82,6 +88,8 @@ def library_artist_to_subsonic(library_artist):
 	}
 	if library_artist.get("inception_year"):
 		result["inceptionYear"] = library_artist["inception_year"]
+	if library_artist.get("biography"):
+		result["biography"] = library_artist["biography"]
 	return result
 
 

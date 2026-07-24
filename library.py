@@ -677,6 +677,17 @@ def get_artists(
     artists: list[dict] = []
     for row in result:
         artist = row._asdict()
+        # Fetch biography from artist_metadata if present
+        bio_row = (
+            conn.execute(
+                text("select biography from artist_metadata where artist_id = :artist_id"),
+                {"artist_id": artist["artist_id"]},
+            )
+            .mappings()
+            .first()
+        )
+        if bio_row and bio_row.get("biography"):
+            artist["biography"] = bio_row["biography"]
         if include_albums:
             albums = get_albums(
                 collection_id=collection_id,
@@ -798,6 +809,26 @@ def get_albums(
         album["duration_human"] = cleaning.milliseconds_to_hours_minutes_seconds(
             int(album["duration"])
         )
+        # Fetch extra cover art images
+        extra_rows = (
+            conn.execute(
+                text(
+                    "select image_type, local_path, sort_order from album_extra_images "
+                    "where album_id = :album_id order by sort_order"
+                ),
+                {"album_id": album["album_id"]},
+            )
+            .mappings()
+            .all()
+        )
+        if extra_rows:
+            album["extra_images"] = [
+                {
+                    "image_type": r["image_type"],
+                    "image_id": f"{album['album_id']}-{r['image_type']}-{r['sort_order']}",
+                }
+                for r in extra_rows
+            ]
         if include_artists and album.get("artist_id"):
             artists = get_artists(
                 collection_id=collection_id,
@@ -1077,6 +1108,8 @@ def fetch_missing_metadata(conn: Connection):
                     pass
         conn.commit()
         fetch_missing_artist_images(conn)
+        fetch_missing_artist_bios(conn)
+        fetch_missing_album_extra_images(conn)
         fetch_missing_lyrics(conn)
     finally:
         config["musicbrainz_metadata"] = original_setting
@@ -1096,6 +1129,71 @@ def fetch_missing_artist_images(conn: Connection):
             if local_path:
                 fetched += 1
     logger.info("Fetched artist images for %d/%d artists", fetched, len(artists))
+
+
+def fetch_missing_artist_bios(conn: Connection):
+    """Fetch Wikipedia biographies for artists missing a biography."""
+    result = conn.execute(
+        text(
+            "select a.artist_id, a.musicbrainz_id from artists a "
+            "left join artist_metadata am on a.artist_id = am.artist_id "
+            "where a.musicbrainz_id is not null and am.artist_id is null"
+        )
+    ).mappings()
+    artists = [dict(row) for row in result]
+    fetched = 0
+    for artist in artists:
+        bio = metadata.fetch_artist_biography(artist["musicbrainz_id"], conn)
+        if bio is not None:
+            conn.execute(
+                text(
+                    "insert or replace into artist_metadata (artist_id, biography) "
+                    "values (:artist_id, :biography)"
+                ),
+                {"artist_id": artist["artist_id"], "biography": bio},
+            )
+            fetched += 1
+    if fetched:
+        conn.commit()
+    logger.info("Fetched artist bios for %d/%d artists", fetched, len(artists))
+
+
+def fetch_missing_album_extra_images(conn: Connection):
+    """Fetch extra album images (back covers, booklets) from CoverArtArchive."""
+    result = conn.execute(
+        text(
+            "select a.album_id, a.musicbrainz_id from albums a "
+            "left join album_extra_images ae on a.album_id = ae.album_id "
+            "where a.musicbrainz_id is not null and ae.album_id is null"
+        )
+    ).mappings()
+    albums = [dict(row) for row in result]
+    fetched = 0
+    for album in albums:
+        images = metadata.fetch_album_extra_images(album["musicbrainz_id"], conn)
+        if images:
+            for i, img in enumerate(images):
+                local_path = metadata.download_album_extra_image(
+                    album["album_id"], img["image_url"], img["image_type"], i
+                )
+                conn.execute(
+                    text(
+                        "insert into album_extra_images "
+                        "(album_id, image_type, image_url, local_path, sort_order) "
+                        "values (:album_id, :image_type, :image_url, :local_path, :sort_order)"
+                    ),
+                    {
+                        "album_id": album["album_id"],
+                        "image_type": img["image_type"],
+                        "image_url": img["image_url"],
+                        "local_path": local_path,
+                        "sort_order": i,
+                    },
+                )
+                fetched += 1
+    if fetched:
+        conn.commit()
+    logger.info("Fetched %d extra album images for %d albums", fetched, len(albums))
 
 
 def fetch_missing_lyrics(conn: Connection):
@@ -1134,6 +1232,8 @@ def reset_metadata(conn: Connection):
     conn.execute(text("update artists set musicbrainz_id = null"))
     conn.execute(text("update albums set musicbrainz_id = null, release_date = null"))
     conn.execute(text("delete from musicbrainz_cache"))
+    conn.execute(text("delete from artist_metadata"))
+    conn.execute(text("delete from album_extra_images"))
     conn.commit()
 
 

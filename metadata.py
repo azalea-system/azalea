@@ -219,6 +219,147 @@ def _download_image(url: str, dest: Path) -> None:
             f.write(resp.read())
 
 
+def fetch_artist_biography(artist_mbid: str, conn: Connection) -> str | None:
+    """Fetch a short artist biography from Wikipedia via MusicBrainz URL relationships."""
+    if not config["musicbrainz_metadata"]:
+        return None
+
+    result_type = "artist_bio"
+    query = artist_mbid
+
+    cached = get_cached_musicbrainz_response(result_type, query, 1, conn)
+    if cached:
+        bio = cached.get("biography")
+        return bio if bio else None
+
+    wiki_title = None
+    tries = 0
+    while not wiki_title and tries < 3:
+        tries += 1
+        try:
+            artist_data = musicbrainzngs.get_artist_by_id(
+                artist_mbid, includes=["url-rels"]
+            )
+        except NetworkError:
+            artist_data = None
+        if artist_data and artist_data.get("artist"):
+            for rel in artist_data["artist"].get("relation-list", []):
+                for r in rel.get("relation", []):
+                    url = r.get("target", "")
+                    if "wikipedia.org/wiki/" in url:
+                        wiki_title = url.split("/wiki/")[-1]
+                        break
+                if wiki_title:
+                    break
+
+    if not wiki_title:
+        if config["cache_musicbrainz_responses"]:
+            cache_musicbrainz_response(result_type, query, 1, {"biography": ""}, conn)
+        return None
+
+    bio = None
+    try:
+        encoded_title = urllib.parse.quote(wiki_title.replace(" ", "_"), safe="")
+        api_url = f"https://en.wikipedia.org/api/rest_v1/page/summary/{encoded_title}"
+        req = urllib.request.Request(
+            api_url,
+            headers={"User-Agent": "Azalea/1.0 (music server)"},
+        )
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            data = json.loads(resp.read())
+            bio = data.get("extract", "")
+    except Exception:
+        logger.debug("Wikipedia fetch failed for %s", wiki_title)
+
+    if config["cache_musicbrainz_responses"]:
+        cache_musicbrainz_response(
+            result_type, query, 1, {"biography": bio or ""}, conn
+        )
+    return bio or None
+
+
+def fetch_album_extra_images(
+    album_musicbrainz_id: str, conn: Connection
+) -> list[dict] | None:
+    """Fetch extra album images (back cover, booklet) from CoverArtArchive.
+
+    Returns a list of dicts like [{"image_url": "...", "image_type": "back"}, ...]
+    or None if nothing found.
+    """
+    if not config["musicbrainz_metadata"]:
+        return None
+
+    result_type = "album_extra_images"
+    query = album_musicbrainz_id
+
+    cached = get_cached_musicbrainz_response(result_type, query, 1, conn)
+    if cached:
+        images = cached.get("images")
+        return images if images else None
+
+    images_result = []
+    tries = 0
+    while tries < 3:
+        tries += 1
+        try:
+            url = f"https://coverartarchive.org/release-group/{album_musicbrainz_id}"
+            req = urllib.request.Request(
+                url,
+                headers={"User-Agent": "Azalea/1.0 (music server)"},
+            )
+            with urllib.request.urlopen(req, timeout=15) as resp:
+                data = json.loads(resp.read())
+                for img in data.get("images", []):
+                    if img.get("front") and not img.get("approved", True):
+                        continue
+                    if img.get("back"):
+                        images_result.append(
+                            {
+                                "image_url": img.get("image", ""),
+                                "image_type": "back",
+                            }
+                        )
+                    elif img.get("booklet"):
+                        images_result.append(
+                            {
+                                "image_url": img.get("image", ""),
+                                "image_type": "booklet",
+                            }
+                        )
+                break
+        except urllib.error.HTTPError as e:
+            if e.code == 404:
+                break
+        except Exception:
+            pass
+
+    if config["cache_musicbrainz_responses"]:
+        cache_musicbrainz_response(
+            result_type, query, 1, {"images": images_result}, conn
+        )
+    return images_result if images_result else None
+
+
+def download_album_extra_image(
+    album_id: str, image_url: str, image_type: str, index: int
+) -> str | None:
+    """Download an extra album image (back cover, booklet page) to local cache."""
+    from imaging import transcode_image
+
+    cache_dir = Path(config["library_path"]).expanduser() / ".album_images"
+    cache_dir.mkdir(parents=True, exist_ok=True)
+    image_id = f"{album_id}-{image_type}-{index}"
+    dest = cache_dir / f"{image_id}.jpg"
+    try:
+        _download_image(image_url, dest)
+        transcode_image(
+            source_path=str(dest), cache_dir=cache_dir, image_id=image_id
+        )
+        return str(dest)
+    except Exception:
+        return None
+
+
 def fetch_lyrics(
     track_name: str | None,
     artist_name: str | None,

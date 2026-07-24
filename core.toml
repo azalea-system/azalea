@@ -6,7 +6,7 @@ github_link = "https://github.com/yuckdevchan/cannit"
 copyright_year_range = "2026"
 contact_email = "fd0acijfg@mozmail.com"
 
-version = "1.1a"
+version = "1.3a"
 subsonic_version = "1.16.1"
 garbage_files = ["desktop.ini", ".DS_Store"]
 

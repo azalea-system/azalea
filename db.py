@@ -121,3 +121,13 @@ def init_db(rescan: bool, conn: Connection):
             "create table if not exists playlist_songs (id integer primary key autoincrement, playlist_id text, song_id text, sort_order int)"
         )
     )
+    conn.execute(
+        text(
+            "create table if not exists artist_metadata (artist_id text primary key, biography text)"
+        )
+    )
+    conn.execute(
+        text(
+            "create table if not exists album_extra_images (album_id text, image_type text, image_url text, local_path text, sort_order int default 0)"
+        )
+    )
